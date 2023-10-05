@@ -1,0 +1,6 @@
+<svg width="400" height="210" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+	<g class="layer">
+		<rect x="40" y="30" width="80" height="180" stroke="yellow" stroke-width="10" fill="none" />
+		<path d="M 40 80 a 60 70 0 0 0 0 80 M 120 80 a 60 70 0 0 1 0 80" stroke="yellow" stroke-width="10" fill="none" />
+	</g>
+</svg>

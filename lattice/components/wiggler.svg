@@ -1,0 +1,8 @@
+<svg width="600" height="300" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+	<g class="layer">
+		<rect x="40" y="10" width="400" height="90" stroke="black" stroke-width="10" fill="plum" />
+		<rect x="40" y="100" width="400" height="90" stroke="black" stroke-width="10" fill="plum" />
+		<rect x="40" y="190" width="40" height="40" stroke="black" stroke-width="10" fill="none" />
+		<rect x="400" y="190" width="40" height="40" stroke="black" stroke-width="10" fill="none" />
+	</g>
+</svg>

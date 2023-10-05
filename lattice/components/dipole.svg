@@ -1,0 +1,6 @@
+<svg width="600" height="300" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+	<g class="layer">
+		<path d="M 40 10 a 1500 1500 0 0 0 400 0 v 180 a 1500 1500 0 0 1 -400 0 z" stroke="limegreen" stroke-width="10" fill="none" />
+		<path d="M 40 120 a 40 40 0 0 0 -30 30 v 20 a 50 50 0 0 0 30 50 a 1500 1500 0 0 0 400 0 a 50 50 0 0 0 30 -50 v -20 a 40 40 0 0 0 -30 -30" stroke="limegreen" stroke-width="10" fill="none" />
+	</g>
+</svg>
