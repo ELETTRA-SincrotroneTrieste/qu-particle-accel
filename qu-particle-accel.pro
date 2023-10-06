@@ -4,31 +4,34 @@ include(qu-particle-accel.pri)
 VERSION_HEX = 0x0100000
 VERSION = 1.0.0
 
-TARGET = $${qu_particle_accel_LIB}
+TARGET = $${qu_pa_a_LIB}
 TEMPLATE = lib
 
-QT += gui
+QT += gui svg
 
 TEMPLATE = lib
 DEFINES += QUPARTICLEACCEL_LIBRARY
 
+DEFINES -= QT_NO_DEBUG_OUTPUT
+CONFIG += debug
 
 CONFIG += c++17 pkgconfig
 
-PKG_CONFIG +=
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    src/qupaitem.cpp \
     src/qustorageringview.cpp \
-    src/qusvgjson.cpp
+    src/qusvgcomponentloader.cpp
 
 HEADERS += \
     qu-particle-accel_global.h \
+    src/qupaitem.h \
     src/qustorageringview.h \
-    src/qusvgjson.h
+    src/qusvgcomponentloader.h
 
 # Default rules for deployment.
 unix {
@@ -78,5 +81,5 @@ INCLUDEPATH += src src/cumbia src/events
 # remove ourselves from -l (.pri)
 LIBS -= -l$${qu_pa_a_LIB}
 
-# RESOURCES += \
-#    qumbia-pa_a.qrc
+RESOURCES += \
+    qu-particle-accel.qrc

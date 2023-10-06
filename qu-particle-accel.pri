@@ -42,7 +42,7 @@ OBJECTS_DIR=objs
 
 unix:!android-g++ {
     CONFIG += link_pkgconfig
-    PKGCONFIG += cumbia cumbia-qtcontrols
+    PKGCONFIG += cumbia cumbia-qtcontrols qumbia-svg
 }
 
 QT       += widgets xml svg opengl

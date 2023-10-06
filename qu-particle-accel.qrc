@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>lattice/elettra_lattice.json</file>
+        <file>lattice/components/undulator.svg</file>
+        <file>lattice/components/wiggler.svg</file>
+        <file>lattice/components/sextupole.svg</file>
+        <file>lattice/components/cavity.svg</file>
+        <file>lattice/components/quadrupole.svg</file>
+        <file>lattice/components/dipole.svg</file>
+    </qresource>
+</RCC>
