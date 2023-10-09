@@ -29,7 +29,5 @@ Storagering::Storagering(CumbiaPool *cumbia_pool, QWidget *parent) :
     // cumbia
 }
 
-Storagering::~Storagering()
-{
-    delete ui;
+Storagering::~Storagering() {
 }

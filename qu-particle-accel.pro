@@ -33,11 +33,6 @@ HEADERS += \
     src/qustorageringview.h \
     src/qusvgcomponentloader.h
 
-# Default rules for deployment.
-unix {
-    target.path = /usr/lib
-}
-!isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
     Doxyfile

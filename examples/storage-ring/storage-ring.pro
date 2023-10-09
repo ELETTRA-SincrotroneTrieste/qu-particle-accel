@@ -3,6 +3,7 @@ isEmpty(CUMBIA_ROOT) {
 }
 include($${CUMBIA_ROOT}/include/quapps/quapps.pri)
 
+QT += xml
 CONFIG += debug
 
 unix:!android-g++ {

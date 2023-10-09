@@ -116,12 +116,14 @@ bool QuStorageRingView::load(const QString &jsonf) {
                         linecnt++;
                         // QGraphicsLineItem *line = scene()->addLine((x<d->last_x? x: d->last_x)-3, (y<d->last_y? y: d->last_y)-3, abs(x-d->last_x)+6, abs(y-d->last_y)+6);
                         QGraphicsLineItem *line = scene()->addLine(d->last_x, d->last_y, x, y);
-//                        qDebug() << __PRETTY_FUNCTION__ << " drawLine()" << d->last_x << ", " << d->last_y << ", " << x << ", " << y << " atan: " << 180.0/M_PI*atan2(y-d->last_y, x-d->last_x);
+                        //                        qDebug() << __PRETTY_FUNCTION__ << " drawLine()" << d->last_x << ", " << d->last_y << ", " << x << ", " << y << " atan: " << 180.0/M_PI*atan2(y-d->last_y, x-d->last_x);
                         svg.appendChild(QuSvgComponentLoader(QString("l_%1").arg(linecnt)).line(d->last_x, d->last_y, x, y));
                     }
                 }
                 if ((y != d->last_y) && (x != d->last_x))
-                    m_add_magnet("bending", x, y, /*180.0/M_PI * */ atan2(y-d->last_y, x-d->last_x) + M_PI, svg);
+                    // atan2 2-variable version of tangent. returns from [-pi,pi]
+                    m_add_magnet("bending", x, y,
+                                 atan2(y-d->last_y, x-d->last_x) + M_PI, svg);
                 d->last_x = x;
                 d->last_y = y;
             }
@@ -154,6 +156,7 @@ int magcnt = 0;
 
 void QuStorageRingView::m_add_magnet(const QString& type, double x, double y, double rad, QDomElement &svgroot) {
     const double bendingSize = 25;
+
     QuPAItem *mag = new QuPAItem(bendingSize, bendingSize/2.0);
     QuSvgComponentLoader svgl(":lattice/components/dipole.svg", "dipole_id");
     if(!d->rendermap.contains("dipole"))
@@ -161,25 +164,28 @@ void QuStorageRingView::m_add_magnet(const QString& type, double x, double y, do
     const QSize& ds = d->rendermap["dipole"]->defaultSize();
     QDomElement el = svgl.element();
     double scale = bendingSize / ds.width();
-    double scaledw = ds.width()/2.0 * scale, scaledh = ds.height()/2.0 * scale; // rotation point
-    magcnt++;
-    if(magcnt %2 == 0) rad = 0;
-    else if(magcnt % 3 == 0) rad = M_PI/3;
-    else rad = M_PI/2.0;
-    double m1 = cos(rad) * scale, m2 = sin(rad) * scale,
-        m3 = -m2, m4 = m1; // m5 = cx * (1-cos(rad))+ cy * sin(rad), m6 = cy  * (1-cos(rad))- cx * sin(rad);
-    double m6 = -scaledh * cos(rad),  m5 = -scaledw * sin(rad);
-//    m5 = -cx, m6 = -cy;
-
+    double scaledw = ds.width() * scale;
+    double scaledh = ds.height() * scale;
+    // top left translated by (half width, half height)
+    double xt = x - scaledw/2.0;
+    double yt = y - scaledh/2.0;
+    double m11 = cos(rad) * scale, m21 = sin(rad) * scale,
+        m12 = -m21, m22 = m11;
+    double m13 = scaledw/2.0 * (1-cos(rad))+ scaledh/2.0 * sin(rad);
+    double m23 = scaledh/2.0  * (1-cos(rad))- scaledw/2.0 * sin(rad);
+    // m1..m6 rotation matrix + translation
+    // m5 and m6 account for the translation of the rotation point
+    // to the center of the rect
     el.setAttribute("transform", QString("matrix(%1,%2,%3,%4,%5,%6)")
-                                     .arg(m1).arg(m2).arg(m3).arg(m4)
-                                     .arg(x + m5).arg(y + m6));
+                                     .arg(m11).arg(m21).arg(m12).arg(m22)
+                                     .arg(xt + m13).arg(yt + m23));
     svgroot.appendChild(svgl.element());
     mag->setSharedRenderer(d->rendermap["dipole"]);
+    mag->setTransformOriginPoint(mag->boundingRect().center());
     mag->setPos(x - bendingSize / 2.0, y - bendingSize / 4.0);
     scene()->addItem(mag);
-    mag->setTransformOriginPoint(mag->boundingRect().center());
-    mag->setRotation(rad);
+    mag->setRotation(rad * 180.0/M_PI );
     qDebug() << __PRETTY_FUNCTION__ << "dipole default size: " << d->rendermap["dipole"]->defaultSize();
+    return;
 }
 
