@@ -23,7 +23,11 @@ Storagering::Storagering(CumbiaPool *cumbia_pool, QWidget *parent) :
     QGridLayout *lo = new QGridLayout(this);
     QuStorageRingView *view = new QuStorageRingView(this, cu_pool, m_ctrl_factory_pool);
     lo->addWidget(view, 0, 0, 10, 10);
-    view->load();
+    bool ok = view->load();
+    if(view->msgs().size() > 0) {
+        for(int i = 0; i < view->msgs().size(); i++)
+            perr("%s: load error: %s", qstoc(view->msgs()[i]));
+    }
 
     // mloader.modules() to get the list of loaded modules
     // cumbia

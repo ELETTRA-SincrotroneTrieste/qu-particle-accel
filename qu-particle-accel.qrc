@@ -7,5 +7,9 @@
         <file>lattice/components/cavity.svg</file>
         <file>lattice/components/quadrupole.svg</file>
         <file>lattice/components/dipole.svg</file>
+        <file>lattice/components/cavitylinac.svg</file>
+        <file>lattice/components/quadrupolebooster.svg</file>
+        <file>lattice/components/dipolebooster.svg</file>
+        <file>lattice/components/sextupolebooster.svg</file>
     </qresource>
 </RCC>

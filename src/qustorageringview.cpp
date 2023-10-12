@@ -14,6 +14,7 @@
 #include <QMouseEvent>
 
 #include <QDomDocument>
+#include <QMap>
 #include <QSvgRenderer>
 #include <QWheelEvent>
 #include <qugraphicssvgitem.h>
@@ -23,7 +24,7 @@
 class QuStorageRingView_P {
 public:
     QuStorageRingView_P() : last_x(-1000000), last_y(-1000000), x_offset(0), y_offset(0), scale_f(60.0) {}
-    QString msg;
+    QStringList msgs;
     double last_x, last_y;
     double x_offset;
     double y_offset;
@@ -51,6 +52,7 @@ bool QuStorageRingView::load(const QString &jsonf) {
     d->x_offset = 0;
     d->y_offset = 0;
     double max_x = -1e9, max_y = -1e9;
+    QPointF p0;
     QDomDocument doc;
     QDomElement svg = doc.createElement("svg");
     svg.setAttribute("id", jsonf);
@@ -58,75 +60,92 @@ bool QuStorageRingView::load(const QString &jsonf) {
     int linecnt = 0;
     QFile jf(!jsonf.isEmpty() ? jsonf : ":lattice/elettra_lattice.json");
     if(!jf.open(QIODevice::ReadOnly|QIODevice::Text)) {
-        d->msg = jf.errorString();
-        perr("%s: %s", __PRETTY_FUNCTION__, qstoc(d->msg));
+        d->msgs += jf.errorString();
+        perr("%s: %s", __PRETTY_FUNCTION__, qstoc(d->msgs.last()));
         return false;
     }
     QJsonParseError pe;
     QJsonDocument jd = QJsonDocument::fromJson(jf.readAll(), &pe);
+    jf.close();
     if(pe.error != QJsonParseError::NoError) {
-        d->msg = pe.errorString();
-        perr("%s: %s", __PRETTY_FUNCTION__, qstoc(d->msg));
+        d->msgs += pe.errorString();
+        perr("%s: %s", __PRETTY_FUNCTION__, qstoc(d->msgs.last()));
         return false;
     }
-    const QStringList& sections { "preinjector", "booster", "bts", "sr"};
-    QJsonObject root = jd.object();
-    foreach(const QString& s, sections) {
-        const QJsonValue& v = root.value(s);
-        if(v.isArray()) {
-            const QJsonArray& a = v.toArray();
-            for(int i = 0; i < a.size(); i++) {
-                const QJsonObject& ao = a.at(i).toObject();
-                const QJsonValue&sv = ao.value("start");
-                if(sv.isObject()) {
-                    double x = sv.toObject().value("x").toDouble();
-                    double y = sv.toObject().value("z").toDouble();
-                    if(x < d->x_offset)
-                        d->x_offset = x;
-                    if(y < d->y_offset)
-                        d->y_offset = y;
-                    if(x > max_x) max_x = x;
-                    if(y > max_y) max_y = y;
-                }
-            }
-        }
-    }
+
+    const QJsonObject &root = jd.object();
+    if(!m_get_bounds(&max_x, &max_y, &d->x_offset, &d->y_offset, root))
+        return false;
+    // document width and height according
+    max_x *= 1.05;
+    max_y *= 1.05; // a little margin
+    d->x_offset *= 1.05; d->y_offset *= 1.05;
     svg.setAttribute("width", (max_x - d->x_offset)/d->scale_f);
     svg.setAttribute("height", (max_y - d->y_offset)/d->scale_f);
+    scene()->setSceneRect(0, 0, svg.attribute("width").toDouble(), svg.attribute("height").toDouble());
+    scene()->addRect(scene()->sceneRect());
 
-    foreach(const QString& s, sections) {
-        double x, y;
+    QJsonValue components_v;
+    // top level objects represent machine divisions (preinj, booster, sr)
+    foreach (const QString& div_name, root.keys()) {
         d->last_x = d->last_y = -1000000;
-        const QJsonValue &v = root.value(s);
-        if(v.isArray()) {
-            const QJsonArray& a = v.toArray();
-            for(int i = 0; i < a.size(); i++) {
-                const QJsonObject& ao = a.at(i).toObject();
-                bool chamber = ao.contains("chamber");
-                const QJsonValue &sv = ao.value("start"); // start object
-                if(sv.isObject()) {
-                    x  = sv.toObject().value("x").toDouble() - d->x_offset;
-                    y  = sv.toObject().value("z").toDouble() - d->y_offset;
-                    qDebug() << __PRETTY_FUNCTION__  << s << " x: " << x << "y: " << y;
-                    x = x/d->scale_f;
-                    y = y/d->scale_f;
+        double x = -d->last_x, y = -d->last_y, xs, ys, last_xs, last_ys; // absolute x and y, scaled xs and ys
+        const QJsonValue& div_v = root.value(div_name);
+        if(!div_v.isObject()) {
+            d->msgs += div_name + " is not a JSon object";
+            return false;
+        }
+        QJsonObject div_o = div_v.toObject();
+        if(div_o.contains("sections") && div_o.value("sections").isArray()) {
+            p0 = QPointF();
+            QJsonArray sections = div_o.value("sections").toArray();
+            for(int i = 0; i < sections.size(); i++) {
+                const QJsonValue &sec = sections[i];
+                const QJsonObject& sec_o = sec.toObject();
+                bool chamber = sec_o.contains("chamber");
+                m_get_coords(sec_o.value("start"), &x, &y, &xs, &ys, &last_xs, &last_ys); // start object
+                if(i == 0 && chamber)
+                    p0 = QPointF(x, y);
+                if (d->last_x > -1000000 && chamber) {
+                    qDebug() << __PRETTY_FUNCTION__ << "adding line " << last_xs <<  last_ys <<  xs << ys;
+                    QGraphicsLineItem *line = scene()->addLine(last_xs, last_ys, xs, ys);
+                    line->setPen(QPen(Qt::blue));
+                    svg.appendChild(QuSvgComponentLoader(QString("l_%1").arg(linecnt)).line(last_xs, last_ys, xs, ys));
                 }
-                if (y > -1000000 && d->last_y > -1000000 && x > -1000000 && d->last_x > -1000000 /*&& chamber*/) {
-                    if(x != d->last_x && y != d->last_y && chamber /*&& linecnt < 5*/) {
-                        linecnt++;
-                        // QGraphicsLineItem *line = scene()->addLine((x<d->last_x? x: d->last_x)-3, (y<d->last_y? y: d->last_y)-3, abs(x-d->last_x)+6, abs(y-d->last_y)+6);
-                        QGraphicsLineItem *line = scene()->addLine(d->last_x, d->last_y, x, y);
-                        //                        qDebug() << __PRETTY_FUNCTION__ << " drawLine()" << d->last_x << ", " << d->last_y << ", " << x << ", " << y << " atan: " << 180.0/M_PI*atan2(y-d->last_y, x-d->last_x);
-                        svg.appendChild(QuSvgComponentLoader(QString("l_%1").arg(linecnt)).line(d->last_x, d->last_y, x, y));
-                    }
-                }
-                if ((y != d->last_y) && (x != d->last_x))
+                if (d->last_x > -1000000 && y != d->last_y && x != d->last_x && chamber) {
+                    QMap<QString, QString> props;
+                    const QJsonValue bending = sec_o.value("bending");
+                    const QJsonObject bo = bending.toObject();
+                    foreach(const QString& bok, bo.keys())
+                        props[bok] = bo[bok].toString();
                     // atan2 2-variable version of tangent. returns from [-pi,pi]
-                    m_add_magnet("bending", x, y,
-                                 atan2(y-d->last_y, x-d->last_x) + M_PI, svg);
+                    double arad = atan2(y - d->last_y, x - d->last_x) + M_PI;
+                    // dipole placed at beginning of this section (last x (scaled), last y (scaled) )
+                    m_add_component("dipole", QPointF(last_xs, last_ys), arad, svg, props);
+                    // subcomponents follow, from end of last section (last_x, last_y) to end of this section (x,y)
+                    m_add_subcomponents(components_v, QPointF(d->last_x, d->last_y), QPointF(x, y), props, svg);
+                }
+                if(sec_o.contains("components")) {
+                    components_v = sec_o.value("components");
+                }
                 d->last_x = x;
                 d->last_y = y;
             }
+
+
+        } // end of sections for a given div
+        // shall we close the path?
+        if(!p0.isNull()) {
+            QMap<QString, QString> props;
+            qDebug() << __PRETTY_FUNCTION__ << "closing line: p0 is" << p0 << "last_xs, last_ys" << last_xs << last_ys;
+            // line goes from p1 (last section drawn) to p2 (first section drawn)
+            // dipole placed in p1 (beginning of section)
+            QPointF p1 = m_transform(QPointF(d->last_x, d->last_y)), p2 = m_transform(p0);
+            QGraphicsLineItem *line = scene()->addLine(p1.x(), p1.y(), p2.x(), p2.y());
+            line->setPen(QPen(Qt::green));
+            m_add_component("dipole", QPointF(p1.x(), p1.y()), atan2(p2.y() - p1.y(), p2.x() - p1.x()) + M_PI, svg, props);
+            if(components_v.isArray())
+                m_add_subcomponents(components_v, QPointF(d->last_x, d->last_y), p0, props, svg);
         }
     }
     QString fout("elettra_lattice.svg");
@@ -138,6 +157,14 @@ bool QuStorageRingView::load(const QString &jsonf) {
         fw.close();
     }
     return true;
+}
+
+bool QuStorageRingView::error() const {
+    return d->msgs.size() > 0;
+}
+
+QStringList QuStorageRingView::msgs() const {
+    return d->msgs;
 }
 
 void QuStorageRingView::mousePressEvent(QMouseEvent *e) {
@@ -154,14 +181,18 @@ void QuStorageRingView::wheelEvent(QWheelEvent *e) {
 
 int magcnt = 0;
 
-void QuStorageRingView::m_add_magnet(const QString& type, double x, double y, double rad, QDomElement &svgroot) {
+void QuStorageRingView::m_add_component(const QString& type,
+                                        const QPointF& pt,
+                                        double rad,
+                                        QDomElement &svgroot,
+                                        const QMap<QString, QString> &props) {
     const double bendingSize = 25;
-
+    const double x = pt.x(), y = pt.y();
     QuPAItem *mag = new QuPAItem(bendingSize, bendingSize/2.0);
-    QuSvgComponentLoader svgl(":lattice/components/dipole.svg", "dipole_id");
-    if(!d->rendermap.contains("dipole"))
-        d->rendermap.insert("dipole", new QSvgRenderer(QLatin1String(":lattice/components/dipole.svg"), this));
-    const QSize& ds = d->rendermap["dipole"]->defaultSize();
+    QuSvgComponentLoader svgl(":lattice/components/" + type + ".svg", type + "_id");
+    if(!d->rendermap.contains(type))
+        d->rendermap.insert(type, new QSvgRenderer(":lattice/components/" + type + ".svg", this));
+    const QSize& ds = d->rendermap[type]->defaultSize();
     QDomElement el = svgl.element();
     double scale = bendingSize / ds.width();
     double scaledw = ds.width() * scale;
@@ -179,13 +210,103 @@ void QuStorageRingView::m_add_magnet(const QString& type, double x, double y, do
     el.setAttribute("transform", QString("matrix(%1,%2,%3,%4,%5,%6)")
                                      .arg(m11).arg(m21).arg(m12).arg(m22)
                                      .arg(xt + m13).arg(yt + m23));
+    QString tooltip;
+    foreach(const QString& pnam, props.keys()) {
+        el.setAttribute(pnam, props[pnam]);
+        tooltip += pnam + " -> " + props[pnam];
+        mag->setToolTip(tooltip);
+    }
+
     svgroot.appendChild(svgl.element());
-    mag->setSharedRenderer(d->rendermap["dipole"]);
+    mag->setSharedRenderer(d->rendermap[type]);
     mag->setTransformOriginPoint(mag->boundingRect().center());
     mag->setPos(x - bendingSize / 2.0, y - bendingSize / 4.0);
     scene()->addItem(mag);
     mag->setRotation(rad * 180.0/M_PI );
-    qDebug() << __PRETTY_FUNCTION__ << "dipole default size: " << d->rendermap["dipole"]->defaultSize();
+//    qDebug() << __PRETTY_FUNCTION__ << type << " default size: " << d->rendermap[type]->defaultSize();
     return;
+}
+
+bool QuStorageRingView::m_get_bounds(double *max_x, double *max_y, double *x_offset, double *y_offset, const QJsonObject &root) const
+{
+    foreach (const QString& div_name, root.keys()) {
+        const QJsonValue& div_v = root.value(div_name);
+        if(!div_v.isObject()) {
+            d->msgs += div_name + " is not a JSon object";
+            return false;
+        }
+        QJsonObject div_o = div_v.toObject();
+        if(div_o.contains("sections") && div_o.value("sections").isArray()) {
+            QJsonArray sections = div_o.value("sections").toArray();
+            for(int i = 0; i < sections.size(); i++) {
+                const QJsonValue &sec = sections[i];
+                // iterate through "sections" array
+                if(sec.isObject()) {
+                    const QJsonObject& so = sec.toObject();
+                    const QJsonValue& sv = so.value("start");
+                    if(sv.isObject()) {
+                        double x = sv.toObject().value("x").toDouble();
+                        double y = sv.toObject().value("z").toDouble();
+                        if(x < *x_offset)
+                            *x_offset = x;
+                        if(y < *y_offset)
+                            *y_offset = y;
+                        if(x > *max_x) *max_x = x;
+                        if(y > *max_y) *max_y = y;
+                    }
+                }
+                else
+                    d->msgs.append(QString("section at index \"%1\" is not an object").arg(i));
+            }
+        }
+    }
+    return true;
+}
+
+bool QuStorageRingView::m_get_coords(const QJsonValue &start_v, double *x, double *y, double *xs, double *ys, double *last_xs, double *last_ys) const
+{
+    *x = 0, *y = 0, *xs = 0, *ys = 0, *last_xs = 0, *last_ys = 0;
+    if(start_v.isObject()) {
+        *x  = start_v.toObject().value("x").toDouble();
+        *y  = start_v.toObject().value("z").toDouble();
+        const QPointF& p1 = m_transform(QPointF(*x, *y));
+        const QPointF& p0 = m_transform(QPointF(d->last_x, d->last_y));
+        *xs = p1.x();
+        *ys = p1.y();
+        *last_xs = p0.x();
+        *last_ys = p0.y();
+    }
+    return true;
+}
+
+bool QuStorageRingView::m_add_subcomponents(const QJsonValue& components_v,
+                                            const QPointF& p0,
+                                            const QPointF& p1,
+                                            QMap<QString, QString> &props,
+                                            QDomElement &svg) {
+    if(components_v.isArray()) {
+        double arad, xs, ys;
+        QJsonArray component_a = components_v.toArray();
+        foreach(const QJsonValue& comp_v, component_a) {
+            if(comp_v.isObject()) {
+                props.clear();
+                const QJsonObject &comp_o = comp_v.toObject();
+                const QString& type = comp_o["type"].toString(QString());
+                const double &pos = comp_o["position"].toDouble(-1);
+                foreach(const QString& mak, comp_o.keys())
+                    props[mak] = comp_o[mak].toString();
+                const QString& name = comp_o["name"].toString(QString());
+                arad = atan2(p1.y() - p0.y(), p1.x() - p0.x());
+                QPointF scaled_p = m_transform(QPointF(p0.x() + pos * cos(arad), p0.y() + pos * sin(arad) ));
+                if(type.length() > 0 && pos > -1)
+                    m_add_component(type, scaled_p, arad, svg, props);
+            }
+        }
+    }
+    return components_v.isArray();
+}
+
+QPointF QuStorageRingView::m_transform(const QPointF &pabs) const {
+    return QPointF((pabs.x() - d->x_offset)/d->scale_f, (pabs.y() - d->y_offset)/d->scale_f);
 }
 
