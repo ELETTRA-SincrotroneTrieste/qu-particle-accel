@@ -1,7 +1,8 @@
 <svg width="400" height="210" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
 	<g class="layer">
-		<rect x="40" y="80" width="140" height="100" stroke="red" stroke-width="10" fill="none" />
-		<path d="M 40 10 v 190 M 180 10 v 190" stroke="red" stroke-width="10" />
-		<path d="M 40 90 a 60 70 0 0 0 0 80 M 180 90 a 60 70 0 0 1 0 80" stroke="red" stroke-width="10" fill="none" />
+		<rect x="40" y="80" width="150" height="100" stroke="red" stroke-width="10" fill="none" />
+		<nopath d="M 40 10 v 190 M 180 10 v 190" stroke="red" stroke-width="10" />
+		<path d="M 90 90 a 30 30 0 0 0 0 80 M 90 90 a 30 30 0 0 1 0 80" stroke="red" stroke-width="30" fill="none" />
+		<path d="M 140 90 a 30 30 0 0 0 0 80 M 140 90 a 30 30 0 0 1 0 80" stroke="red" stroke-width="30" fill="none" />
 	</g>
 </svg>
