@@ -23,14 +23,14 @@ CONFIG += c++17 pkgconfig
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    src/qujson2svg_w.cpp \
     src/qupaitem.cpp \
-    src/qustorageringview.cpp \
     src/qusvgcomponentloader.cpp
 
 HEADERS += \
     qu-particle-accel_global.h \
+    src/qujson2svg_w.h \
     src/qupaitem.h \
-    src/qustorageringview.h \
     src/qusvgcomponentloader.h
 
 

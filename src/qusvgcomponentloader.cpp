@@ -23,6 +23,7 @@ QDomElement QuSvgComponentLoader::element()  {
     QDomDocument doc;
     QDomElement firstChild = m_domd.documentElement();
     firstChild.setTagName("g");
+    firstChild.setAttribute("id", m_id);
     firstChild.removeAttribute("xmlns");
     firstChild.removeAttribute("xmlns:svg");
     firstChild.removeAttribute("version");

@@ -1,6 +1,7 @@
 #include <quapplication.h>
 #include <cuengineaccessor.h>
 #include "storage-ring.h"
+#include <QMessageBox>
 
 // cumbia
 #include <cumbiapool.h>

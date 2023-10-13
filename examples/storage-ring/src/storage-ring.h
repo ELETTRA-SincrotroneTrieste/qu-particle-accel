@@ -20,7 +20,8 @@ class Storagering : public QWidget
 public:
     explicit Storagering(CumbiaPool *cu_p, QWidget *parent = 0);
     ~Storagering();
-
+private slots:
+    void onOperation(const QStringList &errors);
 private:
     Ui::Storagering *ui;
 

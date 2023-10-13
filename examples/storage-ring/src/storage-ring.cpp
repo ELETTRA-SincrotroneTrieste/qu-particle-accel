@@ -7,8 +7,9 @@
 #include <quapps.h>
 // cumbia
 
-#include <qustorageringview.h>
+#include <qujson2svg_w.h>
 #include <QGridLayout>
+#include <QMessageBox>
 
 Storagering::Storagering(CumbiaPool *cumbia_pool, QWidget *parent) :
     QWidget(parent)
@@ -21,17 +22,19 @@ Storagering::Storagering(CumbiaPool *cumbia_pool, QWidget *parent) :
     new CuEngineAccessor(this, &cu_pool, &m_ctrl_factory_pool);
 
     QGridLayout *lo = new QGridLayout(this);
-    QuStorageRingView *view = new QuStorageRingView(this, cu_pool, m_ctrl_factory_pool);
+    QuJsonToSvgW *view = new QuJsonToSvgW(this);
     lo->addWidget(view, 0, 0, 10, 10);
-    bool ok = view->load();
-    if(view->msgs().size() > 0) {
-        for(int i = 0; i < view->msgs().size(); i++)
-            perr("%s: load error: %s", qstoc(view->msgs()[i]));
-    }
+    connect(view, SIGNAL(op(QStringList)), this, SLOT(onOperation(QStringList)));
 
     // mloader.modules() to get the list of loaded modules
     // cumbia
+    resize(800, 600);
 }
 
 Storagering::~Storagering() {
+}
+
+void Storagering::onOperation(const QStringList &errors) {
+    if(errors.size())
+        QMessageBox::critical(this, "Error", errors.join("\n"));
 }
