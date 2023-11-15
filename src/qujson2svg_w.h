@@ -5,6 +5,7 @@
 #include <QDomDocument>
 #include <QMap>
 #include <QGraphicsView>
+#include <QSet>
 
 class QuStorageRingView_P;
 class QGraphicsScene;
@@ -53,9 +54,11 @@ private:
     bool m_add_subcomponents(const QJsonValue &components_v, const QPointF &p0, const QPointF &p1, QMap<QString, QString> &props, QDomElement &svg);
     QMap<QString, QString> m_map_props(const QJsonObject& jo) const;
     QPointF m_transform(const QPointF &pabs) const;
-    void m_set_id(const QString& id, QDomElement& e) const;
+    void m_set_id(const QString& id, QDomElement& e);
     bool m_load();
     QuStorageRingView_P *d;
+    QDomElement m_recursive_set_id(const QDomElement &parente);
+    QStringList m_ids;
 };
 
 #endif // QUJSON2SVG_W_H
