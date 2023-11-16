@@ -7,8 +7,7 @@
 class QuSvgComponentLoader
 {
 public:
-    QuSvgComponentLoader(const QString& fnam, const QString &id);
-    QuSvgComponentLoader(const QString &id);
+    QuSvgComponentLoader(const QString& fnam = QString());
     QDomElement element();
     QDomElement line(double x1, double y1, double x2, double y2);
 
@@ -17,7 +16,6 @@ public:
 
 private:
     QDomDocument m_domd;
-    QString m_id;
 };
 
 #endif // QUSVGCOMPONENTLOADER_H

@@ -20,7 +20,6 @@
 #include <QWheelEvent>
 #include <qugraphicssvgitem.h>
 #include <qupaitem.h>
-#include <qusvgcomponentloader.h>
 #include <QPushButton>
 #include <QDoubleSpinBox>
 #include <qgridlayout.h>
@@ -170,7 +169,7 @@ bool QuJsonToSvgW::m_load() {
     // top level objects represent machine divisions (preinj, booster, sr)
     foreach (const QString& div_name, root.keys()) {
         QDomElement div_e = d->doc.createElement("g");
-        m_set_id(div_name, div_e);
+        m_set_id(div_name.toLower(), div_e);
         svg.appendChild(div_e);
         d->last_x = d->last_y = -1000000;
         double x = -d->last_x, y = -d->last_y, xs, ys, last_xs, last_ys; // absolute x and y, scaled xs and ys
@@ -187,7 +186,7 @@ bool QuJsonToSvgW::m_load() {
                 QJsonArray sections = div_o.value("sections").toArray();
                 for(i = 0; i < sections.size(); i++) {
                     QDomElement sectionE = d->doc.createElement("g");
-                    m_set_id( QString("%1_section_%2").arg(div_name).arg(i), sectionE);
+                    m_set_id( QString("%1_section_%2").arg(div_name).arg(i).toLower(), sectionE);
                     div_e.appendChild(sectionE);
                     const QJsonValue &sec = sections[i];
                     const QJsonObject& sec_o = sec.toObject();
@@ -198,7 +197,9 @@ bool QuJsonToSvgW::m_load() {
                     if (d->last_x > -1000000 && chamber) {
                         QGraphicsLineItem *line = scene()->addLine(last_xs, last_ys, xs, ys);
                         line->setPen(QPen(Qt::blue));
-                        sectionE.appendChild(QuSvgComponentLoader(QString("l_%1").arg(linecnt)).line(last_xs, last_ys, xs, ys));
+                        QDomElement lineE = QuSvgComponentLoader().line(last_xs, last_ys, xs, ys);
+                        m_set_id(QString("l_%1").arg(linecnt++), lineE);
+                        sectionE.appendChild(lineE);
                     }
                     if (d->last_x > -1000000 && y != d->last_y && x != d->last_x && chamber) {
                         QMap<QString, QString> props;
@@ -228,7 +229,7 @@ bool QuJsonToSvgW::m_load() {
             // shall we close the path?
             if(!p0.isNull()) {
                 QDomElement sectionE = d->doc.createElement("g");
-                m_set_id( QString("section_%1").arg(i), sectionE);
+                m_set_id( QString("section_%1").arg(i).toLower(), sectionE);
                 div_e.appendChild(sectionE);
                 QMap<QString, QString> props;
                 // line goes from p1 (last section drawn) to p2 (first section drawn)
@@ -236,7 +237,9 @@ bool QuJsonToSvgW::m_load() {
                 QPointF p1 = m_transform(QPointF(d->last_x, d->last_y)), p2 = m_transform(p0);
                 QGraphicsLineItem *line = scene()->addLine(p1.x(), p1.y(), p2.x(), p2.y());
                 line->setPen(QPen(Qt::green));
-                sectionE.appendChild(QuSvgComponentLoader(QString("l_%1").arg(++linecnt)).line(p1.x(), p1.y(), p2.x(), p2.y()));
+                QDomElement line_e = QuSvgComponentLoader().line(p1.x(), p1.y(), p2.x(), p2.y());
+                m_set_id(QString("l_%1").arg(linecnt++), line_e);
+                sectionE.appendChild(line_e);
 
                 if(!bending_o.isEmpty()) {
                     m_add_component("bending", bending_o.value("name").toString(), QPointF(p1.x(), p1.y()), atan2(p2.y() - p1.y(), p2.x() - p1.x()) + M_PI, sectionE, m_map_props(bending_o));
@@ -273,44 +276,68 @@ void QuJsonToSvgW::m_add_component(const QString& type,
     const double bendingSize = findChild<QDoubleSpinBox *>("sbScale")->value();
     const double x = pt.x(), y = pt.y();
     QuPAItem *mag = new QuPAItem(bendingSize, bendingSize/2.0);
-    QuSvgComponentLoader svgl(":lattice/components/" + type + ".svg", id);
-    if(svgl.error.isEmpty()) {
-        if(!d->rendermap.contains(type))
-            d->rendermap.insert(type, new QSvgRenderer(":lattice/components/" + type + ".svg", this));
-        const QSize& ds = d->rendermap[type]->defaultSize();
-        QDomElement el = svgl.element();
-        double scale = bendingSize / ds.width();
-        double scaledw = ds.width() * scale;
-        double scaledh = ds.height() * scale;
-        // top left translated by (half width, half height)
-        double xt = x - scaledw/2.0;
-        double yt = y - scaledh/2.0;
-        double m11 = cos(rad) * scale, m21 = sin(rad) * scale,
-            m12 = -m21, m22 = m11;
-        double m13 = scaledw/2.0 * (1-cos(rad))+ scaledh/2.0 * sin(rad);
-        double m23 = scaledh/2.0  * (1-cos(rad))- scaledw/2.0 * sin(rad);
-        // m1..m6 rotation matrix + translation
-        // m5 and m6 account for the translation of the rotation point
-        // to the center of the rect
-        el.setAttribute("transform", QString("matrix(%1,%2,%3,%4,%5,%6)")
-                                         .arg(m11).arg(m21).arg(m12).arg(m22)
-                                         .arg(xt + m13).arg(yt + m23));
-        QString tooltip;
-        foreach(const QString& pnam, props.keys()) {
-            el.setAttribute(pnam, props[pnam]);
-            tooltip += pnam + " -> " + props[pnam] + "\n";
-            mag->setToolTip(tooltip);
-        }
 
-        svgroot.appendChild(svgl.element());
-        mag->setSharedRenderer(d->rendermap[type]);
-        mag->setTransformOriginPoint(mag->boundingRect().center());
-        mag->setPos(x - bendingSize / 2.0, y - bendingSize / 4.0);
-        scene()->addItem(mag);
-        mag->setRotation(rad * 180.0/M_PI );
-        //    qDebug() << __PRETTY_FUNCTION__ << type << " default size: " << d->rendermap[type]->defaultSize();
+    QuSvgComponentLoader svgl(":lattice/components/" + type + ".svg");
+    if(!d->rendermap.contains(type))
+        d->rendermap.insert(type, new QSvgRenderer(":lattice/components/" + type + ".svg", this));
+    const QSize& ds = d->rendermap[type]->defaultSize();
+    QDomElement el = svgl.element();
+    double scale = bendingSize / ds.width();
+    double scaledw = ds.width() * scale;
+    double scaledh = ds.height() * scale;
+    // top left translated by (half width, half height)
+    double xt = x - scaledw/2.0;
+    double yt = y - scaledh/2.0;
+    double m11 = cos(rad) * scale, m21 = sin(rad) * scale,
+        m12 = -m21, m22 = m11;
+    double m13 = scaledw/2.0 * (1-cos(rad))+ scaledh/2.0 * sin(rad);
+    double m23 = scaledh/2.0  * (1-cos(rad))- scaledw/2.0 * sin(rad);
+    // m1..m6 rotation matrix + translation
+    // m5 and m6 account for the translation of the rotation point
+    // to the center of the rect
+    el.setAttribute("transform", QString("matrix(%1,%2,%3,%4,%5,%6)")
+                                     .arg(m11).arg(m21).arg(m12).arg(m22)
+                                     .arg(xt + m13).arg(yt + m23));
+    QString tooltip;
+    foreach(const QString& pnam, props.keys()) {
+        el.setAttribute(pnam, props[pnam]);
+        tooltip += pnam + " -> " + props[pnam] + "\n";
+        mag->setToolTip(tooltip);
     }
+    m_set_id(id.toLower(), el);
+    m_recursive_set_id(el); // set suitable IDs on children recursively
+
+    svgroot.appendChild(el);
+    mag->setSharedRenderer(d->rendermap[type]);
+    mag->setTransformOriginPoint(mag->boundingRect().center());
+    mag->setPos(x - bendingSize / 2.0, y - bendingSize / 4.0);
+    scene()->addItem(mag);
+    mag->setRotation(rad * 180.0/M_PI );
+    //    qDebug() << __PRETTY_FUNCTION__ << type << " default size: " << d->rendermap[type]->defaultSize();
     return;
+}
+
+QDomElement QuJsonToSvgW::m_recursive_set_id(const QDomElement& el) {
+    QSet<QString> idset;
+    int c = 0;
+    for(int i = 0; i < el.childNodes().size(); i++) {
+        QDomNode n = el.childNodes().at(i);
+        if(n.isElement()) {
+            QDomElement e = n.toElement();
+//            QString id = e.hasAttribute("id") ? e.attribute("id") :
+//                QString("%1.%2").arg(el.attribute("id")).arg(el.tagName());
+            QString id = QString("%1.%2").arg(el.attribute("id")).arg(el.tagName()).toLower();
+            while(idset.contains(id))
+                id = QString("%1#%2").arg(id).arg(++c);
+
+            if(!e.hasAttribute("id") || e.attribute("id") != id) {
+                m_set_id(id, e); // id already lower case
+                idset.insert(id);
+            }
+            m_recursive_set_id(e);
+        }
+    }
+    return el;
 }
 
 bool QuJsonToSvgW::m_get_bounds(double *max_x, double *max_y, double *x_offset, double *y_offset, const QJsonObject &root) const
@@ -412,11 +439,13 @@ QPointF QuJsonToSvgW::m_transform(const QPointF &pabs) const {
     return QPointF((pabs.x() - d->x_offset)/d->scale_f, (pabs.y() - d->y_offset)/d->scale_f);
 }
 
-void QuJsonToSvgW::m_set_id(const QString &id, QDomElement &e) const {
-    if(this->d->ids.contains(id)) {
-        d->msgs.append(QString("duplicated id '%1'").arg(id));
+void QuJsonToSvgW::m_set_id(const QString &id, QDomElement &e) {
+    if(m_ids.contains(id)) {
+//        d->msgs.append(QString("duplicated id '%1'").arg(id));
+//        perr("QuJsonToSvgW::m_set_id: duplicated id '%s'", qstoc(id));
     }
-    e.setAttribute("id", id);
+    m_ids.append(id);
+    e.setAttribute("id", m_ids.count(id) == 1 ? id : QString("%1#%2").arg(id).arg(m_ids.count(id) - 1));
 }
 
 void QuJsonToSvgW::load() {
