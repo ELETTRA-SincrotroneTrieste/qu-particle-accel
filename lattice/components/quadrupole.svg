@@ -1,7 +1,7 @@
 <svg width="400" height="210" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
 	<g class="layer">
-		<rect x="40" y="80" width="140" height="100" stroke="red" stroke-width="10" fill="none" />
+		<rect x="40" y="80" width="140" height="100" stroke="red" stroke-width="10" fill="#fff3f3" />
 		<path d="M 40 10 v 190 M 180 10 v 190" stroke="red" stroke-width="10" />
-		<path d="M 40 90 a 60 70 0 0 0 0 80 M 180 90 a 60 70 0 0 1 0 80" stroke="red" stroke-width="10" fill="none" />
+		<path d="M 35 90 a 60 70 0 0 0 0 80 M 185 90 a 60 70 0 0 1 0 80" stroke="red" stroke-width="2" fill="#ffcc90" />
 	</g>
 </svg>

@@ -66,6 +66,7 @@ QuJsonToSvgW::QuJsonToSvgW(QWidget *parent)
     : QWidget(parent), d(new QuStorageRingView_P) {
     QGridLayout *lo = new QGridLayout(this);
     QGraphicsView *gv = new MyGraphicsView(this);
+    gv->setRenderHint(QPainter::Antialiasing, true);
     QGraphicsScene *scene = new QGraphicsScene(this);
     gv->setScene(scene);
     QLabel *scaleLabel = new QLabel("Objects scale factor", this);
@@ -191,12 +192,9 @@ bool QuJsonToSvgW::m_load() {
                     const QJsonValue &sec = sections[i];
                     const QJsonObject& sec_o = sec.toObject();
                     bool chamber = sec_o.contains("chamber");
-                    bool bending = sec_o.contains("bending");
                     m_get_coords(sec_o.value("start"), &x, &y, &xs, &ys, &last_xs, &last_ys); // start object
                     if(i == 0 && chamber)
-                        p0 = QPointF(x, y);
-                    if(i == 0 && bending && sec_o.value("bending").isObject())
-                        bending_o = sec_o.value("bending").toObject();
+                        p0 = QPointF(x, y);                        
                     if (d->last_x > -1000000 && chamber) {
                         QGraphicsLineItem *line = scene()->addLine(last_xs, last_ys, xs, ys);
                         line->setPen(QPen(Qt::blue));
@@ -204,22 +202,24 @@ bool QuJsonToSvgW::m_load() {
                     }
                     if (d->last_x > -1000000 && y != d->last_y && x != d->last_x && chamber) {
                         QMap<QString, QString> props;
-                        const QJsonValue bending = sec_o.value("bending");
-                        const QJsonObject bo = bending.toObject();
-                        foreach(const QString& bok, bo.keys())
-                            props[bok] = bo[bok].toString();
-                        // atan2 2-variable version of tangent. returns from [-pi,pi]
-                        double arad = atan2(y - d->last_y, x - d->last_x) + M_PI;
-                        // dipole placed at beginning of this section (last x (scaled), last y (scaled) )
-                        if(sec_o.contains("bending")) { // bending and bo are valid
-                            const QString& id = bo.value("name").toString();
-                            m_add_component("dipole", id, QPointF(last_xs, last_ys), arad, sectionE, props);
+                        // bending_o in last_x, last_y from previous section
+                        if(!bending_o.isEmpty()) {
+                            foreach(const QString& bok, bending_o.keys())
+                                props[bok] = bending_o[bok].toString();
+                            // atan2 2-variable version of tangent. returns from [-pi,pi]
+                            double arad = atan2(y - d->last_y, x - d->last_x) + M_PI;
+                            // dipole placed at beginning of this section (last x (scaled), last y (scaled) )
+                            const QString& id = bending_o.value("name").toString();
+                            m_add_component("bending", id, QPointF(last_xs, last_ys), arad, sectionE, props);
                         }
                         // subcomponents follow, from end of last section (last_x, last_y) to end of this section (x,y)
                         m_add_subcomponents(components_v, QPointF(d->last_x, d->last_y), QPointF(x, y), props, sectionE);
                     }
                     if(sec_o.contains("components")) {
                         components_v = sec_o.value("components");
+                    }
+                    if(sec_o.contains("bending") && sec_o.value("bending").isObject()) {
+                        bending_o = sec_o.value("bending").toObject();
                     }
                     d->last_x = x;
                     d->last_y = y;
@@ -239,7 +239,7 @@ bool QuJsonToSvgW::m_load() {
                 sectionE.appendChild(QuSvgComponentLoader(QString("l_%1").arg(++linecnt)).line(p1.x(), p1.y(), p2.x(), p2.y()));
 
                 if(!bending_o.isEmpty()) {
-                    m_add_component("dipole", bending_o.value("name").toString(), QPointF(p1.x(), p1.y()), atan2(p2.y() - p1.y(), p2.x() - p1.x()) + M_PI, sectionE, m_map_props(bending_o));
+                    m_add_component("bending", bending_o.value("name").toString(), QPointF(p1.x(), p1.y()), atan2(p2.y() - p1.y(), p2.x() - p1.x()) + M_PI, sectionE, m_map_props(bending_o));
                 }
                 if(components_v.isArray())
                     m_add_subcomponents(components_v, QPointF(d->last_x, d->last_y), p0, props, sectionE);
@@ -274,40 +274,42 @@ void QuJsonToSvgW::m_add_component(const QString& type,
     const double x = pt.x(), y = pt.y();
     QuPAItem *mag = new QuPAItem(bendingSize, bendingSize/2.0);
     QuSvgComponentLoader svgl(":lattice/components/" + type + ".svg", id);
-    if(!d->rendermap.contains(type))
-        d->rendermap.insert(type, new QSvgRenderer(":lattice/components/" + type + ".svg", this));
-    const QSize& ds = d->rendermap[type]->defaultSize();
-    QDomElement el = svgl.element();
-    double scale = bendingSize / ds.width();
-    double scaledw = ds.width() * scale;
-    double scaledh = ds.height() * scale;
-    // top left translated by (half width, half height)
-    double xt = x - scaledw/2.0;
-    double yt = y - scaledh/2.0;
-    double m11 = cos(rad) * scale, m21 = sin(rad) * scale,
-        m12 = -m21, m22 = m11;
-    double m13 = scaledw/2.0 * (1-cos(rad))+ scaledh/2.0 * sin(rad);
-    double m23 = scaledh/2.0  * (1-cos(rad))- scaledw/2.0 * sin(rad);
-    // m1..m6 rotation matrix + translation
-    // m5 and m6 account for the translation of the rotation point
-    // to the center of the rect
-    el.setAttribute("transform", QString("matrix(%1,%2,%3,%4,%5,%6)")
-                                     .arg(m11).arg(m21).arg(m12).arg(m22)
-                                     .arg(xt + m13).arg(yt + m23));
-    QString tooltip;
-    foreach(const QString& pnam, props.keys()) {
-        el.setAttribute(pnam, props[pnam]);
-        tooltip += pnam + " -> " + props[pnam] + "\n";
-        mag->setToolTip(tooltip);
-    }
+    if(svgl.error.isEmpty()) {
+        if(!d->rendermap.contains(type))
+            d->rendermap.insert(type, new QSvgRenderer(":lattice/components/" + type + ".svg", this));
+        const QSize& ds = d->rendermap[type]->defaultSize();
+        QDomElement el = svgl.element();
+        double scale = bendingSize / ds.width();
+        double scaledw = ds.width() * scale;
+        double scaledh = ds.height() * scale;
+        // top left translated by (half width, half height)
+        double xt = x - scaledw/2.0;
+        double yt = y - scaledh/2.0;
+        double m11 = cos(rad) * scale, m21 = sin(rad) * scale,
+            m12 = -m21, m22 = m11;
+        double m13 = scaledw/2.0 * (1-cos(rad))+ scaledh/2.0 * sin(rad);
+        double m23 = scaledh/2.0  * (1-cos(rad))- scaledw/2.0 * sin(rad);
+        // m1..m6 rotation matrix + translation
+        // m5 and m6 account for the translation of the rotation point
+        // to the center of the rect
+        el.setAttribute("transform", QString("matrix(%1,%2,%3,%4,%5,%6)")
+                                         .arg(m11).arg(m21).arg(m12).arg(m22)
+                                         .arg(xt + m13).arg(yt + m23));
+        QString tooltip;
+        foreach(const QString& pnam, props.keys()) {
+            el.setAttribute(pnam, props[pnam]);
+            tooltip += pnam + " -> " + props[pnam] + "\n";
+            mag->setToolTip(tooltip);
+        }
 
-    svgroot.appendChild(svgl.element());
-    mag->setSharedRenderer(d->rendermap[type]);
-    mag->setTransformOriginPoint(mag->boundingRect().center());
-    mag->setPos(x - bendingSize / 2.0, y - bendingSize / 4.0);
-    scene()->addItem(mag);
-    mag->setRotation(rad * 180.0/M_PI );
-    //    qDebug() << __PRETTY_FUNCTION__ << type << " default size: " << d->rendermap[type]->defaultSize();
+        svgroot.appendChild(svgl.element());
+        mag->setSharedRenderer(d->rendermap[type]);
+        mag->setTransformOriginPoint(mag->boundingRect().center());
+        mag->setPos(x - bendingSize / 2.0, y - bendingSize / 4.0);
+        scene()->addItem(mag);
+        mag->setRotation(rad * 180.0/M_PI );
+        //    qDebug() << __PRETTY_FUNCTION__ << type << " default size: " << d->rendermap[type]->defaultSize();
+    }
     return;
 }
 

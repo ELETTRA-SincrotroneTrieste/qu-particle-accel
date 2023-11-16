@@ -1,15 +1,19 @@
 <RCC>
-    <qresource prefix="/">
+   <qresource prefix="/">
         <file>lattice/elettra_lattice.json</file>
         <file>lattice/components/undulator.svg</file>
         <file>lattice/components/wiggler.svg</file>
-        <file>lattice/components/sextupole.svg</file>
         <file>lattice/components/cavity.svg</file>
         <file>lattice/components/quadrupole.svg</file>
+        <file>lattice/components/corrector.svg</file>
+        <file>lattice/components/kicker.svg</file>
         <file>lattice/components/dipole.svg</file>
+        <file>lattice/components/bending.svg</file>
+        <file>lattice/components/bending_plus.svg</file>
         <file>lattice/components/cavitylinac.svg</file>
         <file>lattice/components/quadrupolebooster.svg</file>
         <file>lattice/components/dipolebooster.svg</file>
         <file>lattice/components/sextupolebooster.svg</file>
+        <file>lattice/components/sextupole.svg</file>
     </qresource>
 </RCC>
