@@ -1,0 +1,8 @@
+	<svg width="700" height="360" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+		<g class="layer">
+			<rect x="110" y="10" width="200" height="340" stroke="#2f2f2f" stroke-width="6px" fill="lightslategrey" />
+			<rect x="310" y="14" width="80" height="330" stroke="#2f2f2f" stroke-width="6px" fill="lightslategrey" />
+			<circle r="25" cx="350" cy="170" fill="red " stroke="red" stroke-width="6px" />
+			<polygon points="110,10 60,40 60,310, 110,350" fill="lightslategrey" stroke="#2f2f2f" stroke-width="6px" />
+		</g>
+	</svg>
