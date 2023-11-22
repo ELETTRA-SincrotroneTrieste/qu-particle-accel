@@ -21,6 +21,8 @@ QDomElement QuSvgComponentLoader::element()  {
     QDomElement firstChild = m_domd.documentElement();
     firstChild.setTagName("g");
     firstChild.setAttribute("item", "true");
+    firstChild.setAttribute("clickable", "true");
+
     firstChild.removeAttribute("xmlns");
     firstChild.removeAttribute("xmlns:svg");
     firstChild.removeAttribute("version");
@@ -49,6 +51,7 @@ QDomElement QuSvgComponentLoader::line(double x1, double y1, double x2, double y
     line.setAttribute("x2", x2);
     line.setAttribute("y1", y1);
     line.setAttribute("y2", y2);
+    line.setAttribute("z", -100);
     line.setAttribute("stroke", "blue");
     line.setAttribute("item", "true"); // for cumbia-svg
     return line;
