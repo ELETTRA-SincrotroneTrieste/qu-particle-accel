@@ -33,7 +33,7 @@ class QuJsonToSvgW : public QWidget
 public:
     QuJsonToSvgW(QWidget* parent);
     bool error() const;
-    QStringList msgs() const;
+    QSet<QString> msgs() const;
     QGraphicsScene *scene() const;
 
 

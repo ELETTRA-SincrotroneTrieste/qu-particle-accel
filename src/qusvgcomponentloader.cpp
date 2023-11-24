@@ -11,7 +11,7 @@ QuSvgComponentLoader::QuSvgComponentLoader(const QString &fnam) {
             file.close();
         }
         else {
-            error = file.errorString();
+            error = "error opening '" + fnam + "': " + file.errorString();
         }
     }
 }
@@ -20,6 +20,7 @@ QDomElement QuSvgComponentLoader::element()  {
     QDomDocument doc;
     QDomElement firstChild = m_domd.documentElement();
     firstChild.setTagName("g");
+    firstChild.setAttribute("id", "g1");
     firstChild.setAttribute("item", "true");
     firstChild.setAttribute("clickable", "true");
 

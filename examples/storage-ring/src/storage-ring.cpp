@@ -35,6 +35,6 @@ Storagering::~Storagering() {
 }
 
 void Storagering::onOperation(const QStringList &errors) {
-    if(errors.size())
-        QMessageBox::critical(this, "Error", errors.join("\n"));
+    foreach(const QString& err, errors)
+        perr("%s", qstoc(err));
 }
