@@ -69,6 +69,7 @@ QuJsonToSvgW::QuJsonToSvgW(QWidget *parent)
     QGraphicsScene *scene = new QGraphicsScene(this);
     gv->setScene(scene);
     QLabel *scaleLabel = new QLabel("Objects scale factor", this);
+    QLabel *borderLabel = new QLabel("Border width", this);
     QLabel *inLabel = new QLabel("JSON in", this);
     QLabel *outLabel = new QLabel("SVG out", this);
     QPushButton *pbApplyScale = new QPushButton("Apply", this);
@@ -81,6 +82,8 @@ QuJsonToSvgW::QuJsonToSvgW(QWidget *parent)
     pbLoad->setObjectName("load");
     QDoubleSpinBox *sbScale = new QDoubleSpinBox(this);
     sbScale->setObjectName("sbScale");
+    QSpinBox *sbBorder = new QSpinBox(this);
+    sbBorder->setObjectName("sbBorder");
     QLineEdit *finLe = new QLineEdit(this);
     QLineEdit *foutLe = new QLineEdit(this);
     finLe->setReadOnly(true);
@@ -92,19 +95,24 @@ QuJsonToSvgW::QuJsonToSvgW(QWidget *parent)
     sbScale->setMinimum(1);
     sbScale->setMaximum(100);
     sbScale->setValue(25.0);
+    sbBorder->setMinimum(0);
+    sbBorder->setMaximum(500);
+    sbBorder->setValue(20);
     connect(pbApplyScale, SIGNAL(clicked()), this, SLOT(rescale()));
     connect(pbSaveSVG, SIGNAL(clicked()), this, SLOT(save_svg()));
     connect(pbSetJsonIn, SIGNAL(clicked()), this, SLOT(open_json()));
     connect(pbSetOutFnam, SIGNAL(clicked()), this, SLOT(set_out_file()));
     connect(pbLoad, SIGNAL(clicked()), this, SLOT(load()));
-    lo->addWidget(gv, 0, 0, 10, 10);
+    lo->addWidget(gv, 0, 0, 10, 12);
     lo->addWidget(scaleLabel, 10, 0, 1,1);
     lo->addWidget(sbScale, 10, 1, 1, 1);
-    lo->addWidget(pbApplyScale, 10, 2, 1, 1);
-    lo->addWidget(inLabel, 10, 3, 1, 1);
-    lo->addWidget(pbSetJsonIn, 10, 4, 1, 1);
-    lo->addWidget(finLe, 10, 5, 1, 4);
-    lo->addWidget(pbLoad, 10, 9, 1, 1);
+    lo->addWidget(borderLabel, 10, 2, 1, 1);
+    lo->addWidget(sbBorder, 10, 3, 1, 1);
+    lo->addWidget(pbApplyScale, 10, 4, 1, 1);
+    lo->addWidget(inLabel, 10, 5, 1, 1);
+    lo->addWidget(pbSetJsonIn, 10, 6, 1, 1);
+    lo->addWidget(finLe, 10, 7, 1, 4);
+    lo->addWidget(pbLoad, 10, 11, 1, 1);
     lo->addWidget(outLabel, 11, 0, 1, 1);
     lo->addWidget(foutLe, 11, 1, 1, 7);
     lo->addWidget(pbSetOutFnam, 11, 8, 1, 1);
@@ -209,7 +217,7 @@ bool QuJsonToSvgW::m_load() {
                             foreach(const QString& bok, bending_o.keys())
                                 props[bok] = bending_o[bok].toString();
                             // atan2 2-variable version of tangent. returns from [-pi,pi]
-                            double arad = atan2(y - d->last_y, x - d->last_x) + M_PI;
+                            double arad = atan2(y - d->last_y, x - d->last_x)/* + M_PI*/;
                             // dipole placed at beginning of this section (last x (scaled), last y (scaled) )
                             const QString& id = bending_o.value("name").toString();
                             m_add_component("bending", id, QPointF(last_xs, last_ys), arad, sectionE, props);
@@ -244,7 +252,7 @@ bool QuJsonToSvgW::m_load() {
                 sectionE.appendChild(line_e);
 
                 if(!bending_o.isEmpty()) {
-                    m_add_component("bending", bending_o.value("name").toString(), QPointF(p1.x(), p1.y()), atan2(p2.y() - p1.y(), p2.x() - p1.x()) + M_PI, sectionE, m_map_props(bending_o));
+                    m_add_component("bending", bending_o.value("name").toString(), QPointF(p1.x(), p1.y()), atan2(p2.y() - p1.y(), p2.x() - p1.x()) /*+ M_PI*/, sectionE, m_map_props(bending_o));
                 }
                 if(components_v.isArray())
                     m_add_subcomponents(components_v, QPointF(d->last_x, d->last_y), p0, props, sectionE);
@@ -288,15 +296,11 @@ void QuJsonToSvgW::m_add_component(const QString& type,
         mag->setSharedRenderer(d->rendermap[type]);
         mag->setTransformOriginPoint(mag->boundingRect().center());
         mag->setPos(x - bendingSize / 2.0, y - bendingSize / 4.0);
-        mag->setElementId(el.attribute("id"));
         scene()->addItem(mag);
         mag->setRotation(rad * 180.0/M_PI );
 
-
-        const QSize& dsdef = d->rendermap[type]->defaultSize();
-        QSizeF ds = d->rendermap[type]->boundsOnElement(el.attribute("id")).size();
-//        ds = dsdef;
-        qDebug() << __PRETTY_FUNCTION__ << "default rect: " << dsdef << "boundsOnElement" << ds;
+        const QSize& ds = d->rendermap[type]->defaultSize();
+        const QRectF& svgbounds = d->rendermap[type]->boundsOnElement(el.attribute("id"));
         double scale = bendingSize / ds.width();
         double scaledw = ds.width() * scale;
         double scaledh = ds.height() * scale;
@@ -328,7 +332,6 @@ void QuJsonToSvgW::m_add_component(const QString& type,
                                          .arg(xt + m13).arg(yt + m23)
                                          .arg(scale)
                                          .arg(rad/2.0/M_PI * 360));
-        el.setAttribute("rotate", rad/2.0/M_PI * 360);
         printf("QuJsonToSvgW::m_add_component: x: %f bendingSize/2.0: %f scale %f\n", x, bendingSize/2.0, scale);
         QString tooltip;
         foreach(const QString& pnam, props.keys()) {
@@ -341,7 +344,11 @@ void QuJsonToSvgW::m_add_component(const QString& type,
 
         svgroot.appendChild(el);
 
-        //    qDebug() << __PRETTY_FUNCTION__ << type << " default size: " << d->rendermap[type]->defaultSize();
+
+        if(svgbounds.size() != ds || svgbounds.x() > 0 || svgbounds.y() > 0)
+            d->msgs.insert(QString("warning: element ID '%1' ('%2')'s size (%3x%4) may not be optimized to content (%5,%6 %7%8)")
+                               .arg(el.attribute("id")).arg(el.attribute("name")).arg(ds.width()).arg(ds.height())
+                               .arg(svgbounds.x()).arg(svgbounds.y()).arg(svgbounds.width()).arg(svgbounds.height()));
     }
     else
         d->msgs.insert(svgl.error);
@@ -373,6 +380,7 @@ QDomElement QuJsonToSvgW::m_recursive_set_id(const QDomElement& el) {
 
 bool QuJsonToSvgW::m_get_bounds(double *max_x, double *max_y, double *x_offset, double *y_offset, const QJsonObject &root) const
 {
+    int border = findChild<QSpinBox *>("sbBorder")->value() * findChild<QDoubleSpinBox *>("sbScale")->value();
     foreach (const QString& div_name, root.keys()) {
         const QJsonValue& div_v = root.value(div_name);
         if(!div_v.isObject()) {
@@ -404,6 +412,10 @@ bool QuJsonToSvgW::m_get_bounds(double *max_x, double *max_y, double *x_offset, 
             }
         }
     }
+    *x_offset -= border;
+    *y_offset -= border;
+    *max_x += border;
+    *max_y += border;
     return true;
 }
 
