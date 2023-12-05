@@ -1,10 +1,97 @@
-<svg width="700" height="350" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
-	<g class="layer">
-		<rect x="40" y="70" width="500" height="200" stroke="#2f2f2f" stroke-width="13" fill="#c7c7c7" />
-		<rect x="20" y="40" width="40" height="260" stroke="#2f2f2f" stroke-width="13" fill="#c7c7c7" />
-		<rect x="500" y="40" width="40" height="260" stroke="#2f2f2f" stroke-width="13" fill="#c7c7c7" />
-		
-        <circle r="60" cx="170" cy="165" fill="#edebeb" stroke="#2f2f2f" stroke-width="10px" />
-        <circle r="60" cx="385" cy="165" fill="#edebeb" stroke="#2f2f2f" stroke-width="10px" />
-	</g>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="533"
+   height="273"
+   version="1.1"
+   id="svg6"
+   sodipodi:docname="septum.svg"
+   inkscape:version="1.3.2 (091e20ef0f, 2023-11-25, custom)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs6" />
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="3.2314286"
+     inkscape:cx="349.07162"
+     inkscape:cy="173.76216"
+     inkscape:window-width="3440"
+     inkscape:window-height="1335"
+     inkscape:window-x="0"
+     inkscape:window-y="32"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg6" />
+  <g
+     class="layer"
+     id="g6"
+     transform="translate(-13.5,-33.5)">
+    <rect
+       x="40"
+       y="70"
+       width="500"
+       height="200"
+       stroke="#2f2f2f"
+       stroke-width="13"
+       fill="#c7c7c7"
+       id="rect1" />
+    <rect
+       x="20"
+       y="40"
+       width="40"
+       height="260"
+       stroke="#2f2f2f"
+       stroke-width="13"
+       fill="#c7c7c7"
+       id="rect2" />
+    <rect
+       x="500"
+       y="40"
+       width="40"
+       height="260"
+       stroke="#2f2f2f"
+       stroke-width="13"
+       fill="#c7c7c7"
+       id="rect3" />
+    <circle
+       r="60"
+       cx="170"
+       cy="165"
+       fill="#edebeb"
+       stroke="#2f2f2f"
+       stroke-width="10px"
+       id="circle3" />
+    <circle
+       r="50"
+       cx="170"
+       cy="165"
+       fill="#edebeb"
+       stroke="#2f2f2f"
+       stroke-width="5px"
+       id="circle4" />
+    <circle
+       r="60"
+       cx="385"
+       cy="165"
+       fill="#edebeb"
+       stroke="#2f2f2f"
+       stroke-width="10px"
+       id="circle5" />
+    <circle
+       r="50"
+       cx="385"
+       cy="165"
+       fill="#edebeb"
+       stroke="#2f2f2f"
+       stroke-width="5px"
+       id="circle6" />
+  </g>
 </svg>

@@ -1,6 +1,9 @@
 <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
-	<g class="layer">
-		<rect x="15" y="10" width="190" height="280" stroke="black" stroke-width="10" fill="none" />
-		<path d="M 65 90 a 30 50 0 0 1 90 0 a 50 50 0 0 0 50 50 v 20 a 50 50 0 0 0 -50 50 a 30 50 0 0 1 -90 0 a 50 50 0 0 0 -50 -50 v -20 a 50 50 0 0 0 50 -50 M 110 10 v 280" stroke="black" stroke-width="10" fill="none" />
+	<g class="layer" transform="translate(-10,-40)">
+		<path d="M 80 50 a 60 100 0 0 0 0 220 M 80 50 a 60 100 0 0 1 0 220" stroke="#f5b942" stroke-width="5" fill="#B87333" />
+		<path d="M 80 60 a 60 101 0 0 0 0 200 M 80 60 a 60 101 0 0 1 0 200" stroke="#f5b942" stroke-width="5" fill="#B87333" />
+		<path d="M 80 70 a 60 97 0 0 0 0 180 M 80 70 a 60 97 0 0 1 0 180" stroke="#f5b942" stroke-width="5" fill="#B87333" />
+		<path d="M 80 80 a 60 100 0 0 0 0 160 M 80 80 a 60 100 0 0 1 0 160" stroke="#f5b942" stroke-width="5" fill="#B87333" />
+		<circle r="20" cx="80" cy="160" fill="#edebeb" stroke="#2f2f2f" stroke-width="5px" />
 	</g>
 </svg>

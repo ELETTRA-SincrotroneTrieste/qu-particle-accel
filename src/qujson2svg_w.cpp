@@ -34,12 +34,11 @@ MyGraphicsView::MyGraphicsView(QWidget *parent) : QGraphicsView(parent) {
 }
 
 void MyGraphicsView::mousePressEvent(QMouseEvent *e) {
-    qDebug() << __PRETTY_FUNCTION__ << mapToScene(e->pos());
     QGraphicsView::mousePressEvent(e);
 }
 
 void MyGraphicsView::mouseMoveEvent(QMouseEvent *e) {
-    qDebug() << __PRETTY_FUNCTION__ << itemAt(e->pos());
+    QGraphicsView::mouseMoveEvent(e);
 }
 
 void MyGraphicsView::wheelEvent(QWheelEvent *e) {
@@ -92,9 +91,10 @@ QuJsonToSvgW::QuJsonToSvgW(QWidget *parent)
     finLe->setObjectName("fin");
     finLe->setPlaceholderText("Click on Load JSON...");
     foutLe->setPlaceholderText("Click on convert...");
-    sbScale->setMinimum(1);
-    sbScale->setMaximum(100);
-    sbScale->setValue(25.0);
+    sbScale->setMinimum(0.001);
+    sbScale->setMaximum(10);
+    sbScale->setValue(0.1);
+    sbScale->setSingleStep(0.01);
     sbBorder->setMinimum(0);
     sbBorder->setMaximum(500);
     sbBorder->setValue(20);
@@ -134,6 +134,7 @@ QuJsonToSvgW::QuJsonToSvgW(QWidget *parent)
  */
 bool QuJsonToSvgW::m_load() {
     d->msgs.clear();
+    findChild<QGraphicsScene *>()->clear();
     QString jsonf = findChild<QLineEdit *>("fin")->text();
     d->msgs.clear();
     d->x_offset = 0;
@@ -277,16 +278,19 @@ QGraphicsScene *QuJsonToSvgW::scene() const {
     return findChild<QGraphicsScene *>();
 }
 
-void QuJsonToSvgW::m_add_component(const QString& type,
+void QuJsonToSvgW::m_add_component(const QString& typea,
                                    const QString& id,
                                    const QPointF& pt,
                                    double rad,
                                    QDomElement &svgroot,
                                    const QMap<QString, QString> &props) {
-    const double bendingSize = findChild<QDoubleSpinBox *>("sbScale")->value();
+    const double scale = findChild<QDoubleSpinBox *>("sbScale")->value();
     const double x = pt.x(), y = pt.y();
-    QuPAItem *mag = new QuPAItem(bendingSize, bendingSize/2.0);
-
+    QuPAItem *mag = new QuPAItem();
+    QStringList rem { "booster" };
+    QString type(typea);
+    foreach(const QString& s, rem)
+        type.remove(s);
     QuSvgComponentLoader svgl(":lattice/components/" + type + ".svg");
     if(svgl.error.isEmpty()) {
         if(!d->rendermap.contains(type))
@@ -294,14 +298,25 @@ void QuJsonToSvgW::m_add_component(const QString& type,
 
         QDomElement el = svgl.element();
         mag->setSharedRenderer(d->rendermap[type]);
-        mag->setTransformOriginPoint(mag->boundingRect().center());
-        mag->setPos(x - bendingSize / 2.0, y - bendingSize / 4.0);
-        scene()->addItem(mag);
-        mag->setRotation(rad * 180.0/M_PI );
 
         const QSize& ds = d->rendermap[type]->defaultSize();
         const QRectF& svgbounds = d->rendermap[type]->boundsOnElement(el.attribute("id"));
-        double scale = bendingSize / ds.width();
+        qDebug() << __PRETTY_FUNCTION__ << "bounds on " << type << ":" << svgbounds;
+        mag->setPos(x - svgbounds.width() / 2.0, y - svgbounds.height()  / 2.0);
+        scene()->addItem(mag);
+        mag->setTransformOriginPoint(ds.width()/2.0, ds.height()/2.0);
+        mag->setRotation(rad * 180.0/M_PI );
+        mag->setScale(scale);
+
+        // draw a point at position x, y
+        QGraphicsEllipseItem *ell = new QGraphicsEllipseItem(QRect(0, 0, 3, 3));
+        ell->setPos(x - ell->rect().width() / 2.0, y - ell->rect().height() / 2.0);
+        ell->setBrush(QColor("green"));
+        QPen p(QColor("white"));
+        p.setWidthF(0.0);
+        ell->setPen(p);
+        scene()->addItem(ell);
+
         double scaledw = ds.width() * scale;
         double scaledh = ds.height() * scale;
         // top left translated by (half width, half height)
@@ -309,8 +324,11 @@ void QuJsonToSvgW::m_add_component(const QString& type,
         double yt = y - scaledh/2.0; // for matrix transform type
 //        xt = x - ds.width() / 2.0; // for rotate, scale and translate transform attribute type
 //        yt = y - ds.height() / 2.0; // for rotate, scale and translate transform attribute type
-        printf("QuJsonToSvgW::m_add_component scale is %f bendingsize %f render map[%s] size %dx%d\n",
-               scale, bendingSize, qstoc(type), ds.width(), ds.height());
+        printf("QuJsonToSvgW::m_add_component \e[1;32m%s\e[0m scale is %f  render map[%s] default size %dx%d"
+               "svg bounds on element %fx%f  pos (%f,%f) svgbounds x,y (%f,%f) transform origin (%f,%f)\n",
+               qstoc(type), scale, qstoc(type), ds.width(), ds.height(),
+               svgbounds.width(), svgbounds.height(), mag->pos().x(), mag->pos().y(), svgbounds.x(), svgbounds.y(),
+               mag->transformOriginPoint().x(), mag->transformOriginPoint().y());
         double m11 = cos(rad) * scale, m21 = sin(rad) * scale,
             m12 = -m21, m22 = m11;
         double m13 = scaledw/2.0 * (1-cos(rad))+ scaledh/2.0 * sin(rad); // for matrix transform type
@@ -326,13 +344,11 @@ void QuJsonToSvgW::m_add_component(const QString& type,
 //        el.setAttribute("transform", QString("  scale(%1) rotate(%2) translate(%3 %4) ").arg(scale)
 //                                         .arg(0/*rad/2.0/M_PI * 360*/).arg((xt + d->x_offset)/d->scale_f)
 //                                         .arg((yt + d->y_offset)/d->scale_f) );
-        printf("\e[1;32mBEND %s:\e[0m (%f,%f) \n", qstoc(el.attribute("name")), x, y);
 
         el.setAttribute("transform", QString("translate(%1,%2) scale(%3) rotate(%4) ")
                                          .arg(xt + m13).arg(yt + m23)
                                          .arg(scale)
                                          .arg(rad/2.0/M_PI * 360));
-        printf("QuJsonToSvgW::m_add_component: x: %f bendingSize/2.0: %f scale %f\n", x, bendingSize/2.0, scale);
         QString tooltip;
         foreach(const QString& pnam, props.keys()) {
             el.setAttribute(pnam, props[pnam]);
@@ -344,11 +360,6 @@ void QuJsonToSvgW::m_add_component(const QString& type,
 
         svgroot.appendChild(el);
 
-
-        if(svgbounds.size() != ds || svgbounds.x() > 0 || svgbounds.y() > 0)
-            d->msgs.insert(QString("warning: element ID '%1' ('%2')'s size (%3x%4) may not be optimized to content (%5,%6 %7%8)")
-                               .arg(el.attribute("id")).arg(el.attribute("name")).arg(ds.width()).arg(ds.height())
-                               .arg(svgbounds.x()).arg(svgbounds.y()).arg(svgbounds.width()).arg(svgbounds.height()));
     }
     else
         d->msgs.insert(svgl.error);

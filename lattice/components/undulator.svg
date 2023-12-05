@@ -1,12 +1,10 @@
-<svg width="600" height="350" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
-	<g class="layer">
-		<rect x="40" y="10" width="40" height="100" stroke="black" stroke-width="10" fill="none" />
-		<rect x="400" y="10" width="40" height="100" stroke="black" stroke-width="10" fill="none" />
-		<rect x="80" y="10" width="320" height="50" stroke="black" stroke-width="10" fill="none" />
-		<rect x="80" y="60" width="320" height="50" stroke="black" stroke-width="10" fill="none" />
-		<rect x="40" y="110" width="400" height="90" stroke="black" stroke-width="10" fill="none" />
-		<rect x="40" y="200" width="400" height="90" stroke="black" stroke-width="10" fill="none" />
-		<rect x="40" y="290" width="40" height="40" stroke="black" stroke-width="10" fill="none" />
-		<rect x="400" y="290" width="40" height="40" stroke="black" stroke-width="10" fill="none" />
-	</g>
+<svg width="800" height="200" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="Pattern" x="0" y="0" width=".05" height="1">
+      <rect x="0" y="0" width="40" height="200" fill="#a6a4c9"/>
+      <rect x="0" y="0" width="20" height="100" fill="#8a89a7" stroke="black" stroke-width="1" />
+      <rect x="20" y="100" width="20" height="100" fill="#8a89a7" stroke="black" stroke-width="1" />
+    </pattern>
+  </defs>
+  <rect fill="url(#Pattern)" width="800" height="200" stroke="black" stroke-width="10" />
 </svg>

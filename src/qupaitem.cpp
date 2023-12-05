@@ -6,27 +6,21 @@
 
 class QuPAItem_P {
 public:
-    QuPAItem_P(const QSize& s) : size(s) {}
+    QuPAItem_P() {}
 
-    QSize size;
 };
 
-QuPAItem::QuPAItem(const QSize &size, QGraphicsItem *parent)
+QuPAItem::QuPAItem(QGraphicsItem *parent)
     : QGraphicsSvgItem(parent) {
-    d = new QuPAItem_P(size);
+    d = new QuPAItem_P();
 }
 
-QuPAItem::QuPAItem(int width, int height, QGraphicsItem *parent) : QGraphicsSvgItem(parent) {
-    d = new QuPAItem_P(QSize(width, height));
-}
+
 
 QuPAItem::~QuPAItem() {
     delete d;
 }
 
-QRectF QuPAItem::boundingRect() const {
-    return QRectF(0, 0, d->size.width(), d->size.height());
-}
 
 void QuPAItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
     QSvgRenderer *r = renderer();
@@ -37,5 +31,5 @@ void QuPAItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, 
     else
         r->render(painter, elementId(), boundingRect());
     painter->setPen(Qt::cyan);
-//    painter->drawRect(boundingRect());
+    painter->drawRect(boundingRect());
 }
