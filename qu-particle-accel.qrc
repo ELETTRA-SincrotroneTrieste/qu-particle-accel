@@ -1,5 +1,5 @@
 <RCC>
-   <qresource prefix="/">
+    <qresource prefix="/">
         <file>lattice/elettra_lattice.json</file>
         <file>lattice/components/undulator.svg</file>
         <file>lattice/components/wiggler.svg</file>
@@ -15,5 +15,9 @@
         <file>lattice/components/dipolebooster.svg</file>
         <file>lattice/components/sextupolebooster.svg</file>
         <file>lattice/components/sextupole.svg</file>
+        <file>lattice/components/bpm.svg</file>
+        <file>lattice/components/gun.svg</file>
+        <file>lattice/components/flsc.svg</file>
+        <file>lattice/components/septum.svg</file>
     </qresource>
 </RCC>
