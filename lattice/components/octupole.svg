@@ -1,0 +1,10 @@
+<svg width="200" height="210" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+	<g class="layer" transform="translate(-36,-40)">
+ 		<rect x="50" y="50" width="110" height="110" rx="10" ry="10" fill="#F01988" stroke="darkslategrey" stroke-width="5"/>
+  		  <text x="105" y="134" text-anchor="middle" font-family="Arial" font-size="90" fill="white" stroke-width="2">O</text>
+		<path d="M 48 60 a 90 55 0 0 0 0 45 M 162 60 a 90 55 0 0 1 0 45 " stroke="#ffe600" stroke-width="2" fill="#ff7501" />
+		<path d="M 48 105 a 90 55 0 0 0 0 45 M 162 105 a 90 55 0 0 1 0 45" stroke="#ffe600" stroke-width="2" fill="#ff7501" />
+		<path d="M 60 48 Q80 30 105 48 M 60 162 Q80 180 105 162" stroke="#ffe600" stroke-width="2" fill="#ff7501" />
+		<path d="M 105 48 Q130 30 150 48 M 105 162 Q130 180 155 160" stroke="#ffe600" stroke-width="2" fill="#ff7501" /> 
+	</g>
+</svg>
